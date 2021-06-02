@@ -1,0 +1,25 @@
+{
+  "name": "ysf-work",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "nodemon scrape",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^0.21.1",
+    "cheerio": "^1.0.0-rc.9",
+    "csv-parser": "^3.0.0",
+    "csv-writer": "^1.6.0",
+    "json2array": "^4.0.0",
+    "json2csv": "^5.0.6",
+    "lodash": "^4.17.21",
+    "node-xlsx": "^0.16.1",
+    "nodemon": "^2.0.7",
+    "puppeteer": "^9.0.0",
+    "system-sleep": "^1.3.7"
+  }
+}
