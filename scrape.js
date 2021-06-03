@@ -2,7 +2,6 @@ const puppeteer = require('puppeteer');
 const csv = require('csv-parser');
 const fs = require('fs');
 const json2csv = require('json2csv').parse
-const _ = require('lodash')
 const util = require('util');
 
 
@@ -168,7 +167,7 @@ for(let item of dataa){
 
                           if(Object.keys(counts).includes(title22)){
                               rows['account'] = dat['email']
-                              rows['tdNum'] = item['tdNum']
+                              rows['trade numnber(if it exists)'] = item['tdNum']
                               rows['status'] = item['status']
                               rows['date'] = item['date']
                               rows['value'] = item['value']
