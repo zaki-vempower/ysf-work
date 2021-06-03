@@ -2,6 +2,7 @@ const puppeteer = require('puppeteer');
 const csv = require('csv-parser');
 const fs = require('fs');
 const json2csv = require('json2csv').parse
+const _ = require('lodash')
 const util = require('util');
 
 
@@ -62,7 +63,8 @@ const scriptUrl = async (util) => {
                              tdNum:trList[0],
                              date:trList[1],
                              status:trList[2],
-                             value:trList[3]
+                             value:trList[3],
+                             page: 1
                          }
                             rowList.push(book)
 
@@ -86,10 +88,10 @@ let pages1 = []
 console.log('pages clicking',parseInt(services))
 await page.click('.z-paginator-container > button.ziffitbtn:nth-child(1)')
 for(let s=0;s<= (parseInt(services) - 4);s++){
-    await page.waitForTimeout(2000)
+    await page.waitForTimeout(1000)
     await page.click('.z-paginator-container > button.ziffitbtn:nth-child(7)')
-    await page.waitForTimeout(2000)
-    const recordList1 = await page.$$eval('table.ziffittable tbody tr ',(trows)=>{
+    await page.waitForTimeout(1000)
+    let recordList1 = await page.$$eval('table.ziffittable tbody tr ',(trows)=>{
         let rowList = [] 
 
         trows.forEach(row => {
@@ -100,7 +102,7 @@ for(let s=0;s<= (parseInt(services) - 4);s++){
                      tdNum:trList[0],
                      date:trList[1],
                      status:trList[2],
-                     value:trList[3]
+                     value:trList[3],
                  }
                  rowList.push(book)
 
@@ -109,17 +111,24 @@ for(let s=0;s<= (parseInt(services) - 4);s++){
             // const rowL = rowList.filter((element, index, array) => element.length != 0 )
         return rowList;
     })
+    recordList1 = recordList.map(function(el) {
+        var o = Object.assign({}, el);
+        o.page = s + 1;
+        return o;
+      })
     pages1 = [...pages1,...recordList1]
-    await page.waitForTimeout(2000)
+    await page.waitForTimeout(1000)
 
     console.log('dat,dat',pages1.length)
 
 }
 dataa = [...dataa,...pages1]
+dataa = dataa.filter((i,e,a)=> i !== null)
 
-const rwoList = []
+let rwoList = []
 console.log('dataa',dataa.length,utill.isArray(dataa))
 for(let item of dataa){
+    fs.appendFileSync('data.txt', JSON.stringify(item));
                     await page.waitForTimeout(2000);
 
                     await page.goto(`${item.link}`);
@@ -134,45 +143,58 @@ for(let item of dataa){
 
                         return Alist
                     })
+                    rowsOfth = rowsOfth.filter((i,e,a)=> i !== null)
+                    var counts = {};
 
-                    console.log('data',rowsOfth)
+                    rowsOfth?.forEach(function(x) {
+                        counts[x] = (counts[x] || 0) + 1;
+                    });
 
-                    let counts = {}
-rowsOfth = rowsOfth.filter((i)=> i !== null)
-for(let i =0; i < rowsOfth.length; i++){ 
- if (counts[rowsOfth[i]]){
-   counts['ISBN']  = page.$$eval(`table.ziffittable tbody tr:nth-child(${parseInt(i) + 1})  > th[data-label=Barcode]`,(list) =>{
-    const Barcode = list[0]?.innerText
 
-    return Barcode
-   })
-   counts['Title'] = page.$$eval(`table.ziffittable > tbody > tr:nth-child(${parseInt(i) + 1}) > th[data-label=Title]`,(list) =>{
-    const Barcode = list[0]?.innerText
-    return Barcode
-   })
-   counts['tdNum'] = item['tdNum']
-   counts['date'] = item['date']
-   counts['status'] = item['status']
- counts[rowsOfth[i]] += 1
+                    
 
- } else {
-    counts['ISBN']  = page.$$eval(`table.ziffittable tbody tr:nth-child(${parseInt(i) + 1})  > th[data-label=Barcode]`,(list) =>{
-        const Barcode = list[0]?.innerText
-    
-        return Barcode
-       })
-       counts['Title'] = page.$$eval(`table.ziffittable > tbody > tr:nth-child(${parseInt(i) + 1}) > th[data-label=Title]`,(list) =>{
-        const Barcode = list[0]?.innerText
-        return Barcode
-       })
-       counts['tdNum'] = item['tdNum']
-       counts['date'] = item['date']
-       counts['status'] = item['status']
-     counts[rowsOfth[i]] += 1
- counts[rowsOfth[i]] = 1
- }
- rwoList.push(counts)
-}
+
+                    for(let i =0; i < rowsOfth.length; i++){ 
+                        const rows = {}
+                            let isbn  = await page.$$eval(`table.ziffittable tbody tr:nth-child(${parseInt(i) + 1})  > th[data-label=Barcode]`,(list) =>{
+                           const Barcode = list[0]?.innerText
+                       
+                           return Barcode
+                          })
+                         let title22  = await page.$$eval(`table.ziffittable > tbody > tr:nth-child(${parseInt(i) + 1}) > th[data-label=Title]`,(list) =>{
+                           const Barcode = list[0]?.innerText
+                           return Barcode
+                          })
+
+                          if(Object.keys(counts).includes(title22)){
+                              rows['account'] = dat['email']
+                              rows['tdNum'] = item['tdNum']
+                              rows['status'] = item['status']
+                              rows['date'] = item['date']
+                              rows['value'] = item['value']
+                            rows['ISBN'] = isbn
+                              rows['title'] = title22
+                              rows['pagenum'] = item['page']
+
+
+
+
+                            if(typeof counts[`${title22}`] === 'number'){
+                                rows['quantity'] = counts[`${title22}`]
+                                counts[`${title22}`] = rows
+                            }
+
+
+
+
+                          }
+
+                       
+                        
+
+                       }
+                       console.log('title',Object.values(counts))
+                       rwoList = [...rwoList,...Object.values(counts)]
 
 await page.waitForTimeout(2000);
                 }
@@ -183,10 +205,11 @@ await page.waitForTimeout(2000);
                 });
     
     
-                fs.writeFileSync('isbns1.csv', rows);
-                console.log('number', num)
+                fs.writeFileSync('basketmanage.csv', rows);
 
-        await page.click('#mobile-authentication-buttons-component > ul > li:nth-child(2) > a')
+            await page.click('button[data-target="#navbar"]')
+        await page.click('#mobile-authentication-buttons-component > ul > li:nth-child(2)')
+        await page.waitForNavigation()
         }
 
 
