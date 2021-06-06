@@ -3,6 +3,7 @@ const csv = require('csv-parser');
 const fs = require('fs');
 const json2csv = require('json2csv').parse
 const util = require('util');
+const _ = require('lodash')
 
 
 const scriptUrl = async (util) => {
@@ -131,7 +132,6 @@ await page.waitForTimeout(1000)
 dataa = dataa.filter((i,e,a)=> i !== null)
 
 let rwoList = []
-console.log('dataa',dataa.length,utill.isArray(dataa))
 for(let item of dataa){
 
                     await page.waitForTimeout(2000);
@@ -170,7 +170,6 @@ for(let item of dataa){
                         arr.push(item['isbns'])
                     })
                     const set = _.uniq(arr)
-                    console.log('Alist',rowsOfth.length,set.length)
                     rowsOfth = rowsOfth.filter((i,e,a)=> i !== null)
                     var counts = {};
                     rowsOfth = rowsOfth.filter((i,e,a)=> i['title'] !== null)
@@ -182,22 +181,31 @@ for(let item of dataa){
                     const val = Object.keys(counts)
                     rowsOfth1?.forEach(function(itemsss,l) {
                 
-                            if(val.includes(itemsss['isbns']) ){
+                            if(val.includes(itemsss['isbns'] && Object.values(item).length >= 1) ){
                                 vaal[`${itemsss['isbns']}`] = {}
-                                vaal['account'] = dat['email']
-                                vaal['trade numnber(if it exists)'] = item['tdNum']
-                                vaal['status'] = item['status']
-                                vaal['date'] = item['date']
-                                vaal['value'] = item['value']
+                                vaal[`${itemsss['isbns']}`]['account'] = dat['email']
+                                vaal[`${itemsss['isbns']}`]['trade numnber(if it exists)'] = item['tdNum']
+                                vaal[`${itemsss['isbns']}`]['status'] = item['status']
+                                vaal[`${itemsss['isbns']}`]['date'] = item['date']
+                                vaal[`${itemsss['isbns']}`]['value'] = item['value']
                                 vaal[`${itemsss['isbns']}`]['title'] = itemsss['title']  
                                 vaal[`${itemsss['isbns']}`]['isbns'] = itemsss['isbns']
                                 vaal[`${itemsss['isbns']}`]['type'] = itemsss['type']
                                 vaal[`${itemsss['isbns']}`]['status'] = itemsss['status']
                                 vaal[`${itemsss['isbns']}`]['quantity'] = counts[`${itemsss['isbns']}`]
+                                console.log('title',vaal[`${itemsss['isbns']}`])
                             }
                         
                     });
-                       console.log('title',Object.values(vaal))
+
+
+                       rowsh = json2csv(Object.values(vaal), {
+                           header: true
+                       });
+           
+           
+                       fs.appendFileSync('basketmanage12.csv', rowsh);
+                       console.log('proccessed', Object.values(vaal).length)
                        rwoList = [...rwoList,...Object.values(vaal)]
 
 await page.waitForTimeout(2000);
