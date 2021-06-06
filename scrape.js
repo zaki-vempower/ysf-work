@@ -10,6 +10,7 @@ const scriptUrl = async (util) => {
     const data1 = []
     const dat = []
     let dataa = []
+    const vaal = {}
     let book;
     let num = 0;
     let range = 200
@@ -74,11 +75,12 @@ const scriptUrl = async (util) => {
                 return rowList;
             })
 dataa = [...dataa,...recordList]
-            await page.click('.z-paginator-container > button.ziffitbtn:nth-child(8)')
+            await page.click('.z-paginator-container > button.ziffitbtn:last-child')
             const rowPage = []
+            
             const services = await page.evaluate(() =>{
-
-    const data = document.querySelector('.z-paginator-container > button:nth-child(6)').textContent
+                document.querySelector('.z-paginator-container > button:last-child').click()
+    const data = document.querySelector('.z-paginator-container > button:nth-last-child(3)').innerText
     return data
             }
 )
@@ -86,10 +88,8 @@ let pages1 = []
 
 console.log('pages clicking',parseInt(services))
 await page.click('.z-paginator-container > button.ziffitbtn:nth-child(1)')
-for(let s=0;s<= (parseInt(services) - 4);s++){
-    await page.waitForTimeout(1000)
-    await page.click('.z-paginator-container > button.ziffitbtn:nth-child(7)')
-    await page.waitForTimeout(1000)
+for(let s=0;s<= (parseInt(services));s++){
+
     let recordList1 = await page.$$eval('table.ziffittable tbody tr ',(trows)=>{
         let rowList = [] 
 
@@ -115,19 +115,25 @@ for(let s=0;s<= (parseInt(services) - 4);s++){
         o.page = s + 1;
         return o;
       })
-    pages1 = [...pages1,...recordList1]
-    await page.waitForTimeout(1000)
 
+
+    pages1 = [...pages1,...recordList1]
+
+    await page.waitForTimeout(1000)
+    await page.click('.z-paginator-container > button.ziffitbtn:nth-last-child(2)')
+    await page.waitForTimeout(1000)
     console.log('dat,dat',pages1.length)
 
 }
 dataa = [...dataa,...pages1]
+await page.waitForTimeout(1000)
+
 dataa = dataa.filter((i,e,a)=> i !== null)
 
 let rwoList = []
 console.log('dataa',dataa.length,utill.isArray(dataa))
 for(let item of dataa){
-    fs.appendFileSync('data.txt', JSON.stringify(item));
+
                     await page.waitForTimeout(2000);
 
                     await page.goto(`${item.link}`);
@@ -136,67 +142,67 @@ for(let item of dataa){
                     let rowsOfth = await page.$$eval('table.ziffittable tbody tr',(list) =>{
                         const Alist = []
                         list.forEach(row=>{
-                            const wap = row.querySelector('th[data-label="Title"]')?.innerText
-                            Alist.push(wap)
+                            const wap = Array.from(row.querySelectorAll('th'), column => column.innerText);
+                
+                            Alist.push(wap[1])
                         })
-
+                
                         return Alist
                     })
+                    let rowsOfth1 = await page.$$eval('table.ziffittable tbody tr',(list) =>{
+                        const Alist = []
+                        list.forEach(row=>{
+                            const wap = Array.from(row.querySelectorAll('th'), column => column.innerText);
+                            const rows = {
+                                'title': wap[0],
+                                'isbns': wap[1],
+                                'type': wap[2],
+                                'value': wap[3],
+                                'status': wap[4]
+                            }
+                            Alist.push(rows)
+                        })
+                
+                        return Alist
+                    })
+                    const arr = []
+                    rowsOfth.forEach((item,i)=>{
+                        arr.push(item['isbns'])
+                    })
+                    const set = _.uniq(arr)
+                    console.log('Alist',rowsOfth.length,set.length)
                     rowsOfth = rowsOfth.filter((i,e,a)=> i !== null)
                     var counts = {};
-
-                    rowsOfth?.forEach(function(x) {
+                    rowsOfth = rowsOfth.filter((i,e,a)=> i['title'] !== null)
+                
+                    rowsOfth?.forEach(function(x,i) {
                         counts[x] = (counts[x] || 0) + 1;
                     });
 
-
-                    
-
-
-                    for(let i =0; i < rowsOfth.length; i++){ 
-                        const rows = {}
-                            let isbn  = await page.$$eval(`table.ziffittable tbody tr:nth-child(${parseInt(i) + 1})  > th[data-label=Barcode]`,(list) =>{
-                           const Barcode = list[0]?.innerText
-                       
-                           return Barcode
-                          })
-                         let title22  = await page.$$eval(`table.ziffittable > tbody > tr:nth-child(${parseInt(i) + 1}) > th[data-label=Title]`,(list) =>{
-                           const Barcode = list[0]?.innerText
-                           return Barcode
-                          })
-
-                          if(Object.keys(counts).includes(title22)){
-                              rows['account'] = dat['email']
-                              rows['trade numnber(if it exists)'] = item['tdNum']
-                              rows['status'] = item['status']
-                              rows['date'] = item['date']
-                              rows['value'] = item['value']
-                            rows['ISBN'] = isbn
-                              rows['title'] = title22
-                              rows['pagenum'] = item['page']
-
-
-
-
-                            if(typeof counts[`${title22}`] === 'number'){
-                                rows['quantity'] = counts[`${title22}`]
-                                counts[`${title22}`] = rows
+                    const val = Object.keys(counts)
+                    rowsOfth1?.forEach(function(itemsss,l) {
+                
+                            if(val.includes(itemsss['isbns']) ){
+                                vaal[`${itemsss['isbns']}`] = {}
+                                vaal['account'] = dat['email']
+                                vaal['trade numnber(if it exists)'] = item['tdNum']
+                                vaal['status'] = item['status']
+                                vaal['date'] = item['date']
+                                vaal['value'] = item['value']
+                                vaal[`${itemsss['isbns']}`]['title'] = itemsss['title']  
+                                vaal[`${itemsss['isbns']}`]['isbns'] = itemsss['isbns']
+                                vaal[`${itemsss['isbns']}`]['type'] = itemsss['type']
+                                vaal[`${itemsss['isbns']}`]['status'] = itemsss['status']
+                                vaal[`${itemsss['isbns']}`]['quantity'] = counts[`${itemsss['isbns']}`]
                             }
-
-
-
-
-                          }
-
-                       
                         
-
-                       }
-                       console.log('title',Object.values(counts))
-                       rwoList = [...rwoList,...Object.values(counts)]
+                    });
+                       console.log('title',Object.values(vaal))
+                       rwoList = [...rwoList,...Object.values(vaal)]
 
 await page.waitForTimeout(2000);
                 }
+
                 await page.waitForTimeout(2000);
                 console.log('number1', rwoList.length)
                 rows = json2csv(rwoList, {
@@ -204,7 +210,7 @@ await page.waitForTimeout(2000);
                 });
     
     
-                fs.writeFileSync('basketmanage.csv', rows);
+                fs.appendFileSync('basketmanage.csv', rows);
 
             await page.click('button[data-target="#navbar"]')
         await page.click('#mobile-authentication-buttons-component > ul > li:nth-child(2)')
